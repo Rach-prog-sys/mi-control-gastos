@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Control de Gastos & Proyección</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            color: var(--primary-dark);
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .card h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .card .amount {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .card .amount.income { color: var(--success); }
+        .card .amount.expense { color: var(--danger); }
+        .card .amount.balance { color: var(--primary); }
+
+        .layout-main {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        @media (min-width: 850px) {
+            .layout-main {
+                grid-template-columns: 360px 1fr;
+            }
+        }
+
+        form .form-group {
+            margin-bottom: 14px;
+        }
+
+        form label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        form input, form select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            background: #fff;
+        }
+
+        form input:focus, form select:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: var(--text);
+            margin-top: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #f1f5f9;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .tag.ingreso { background: #d1fae5; color: #065f46; }
+        .tag.egreso { background: #fee2e2; color: #991b1b; }
+
+        .progress-bar-bg {
+            background: #e2e8f0;
+            border-radius: 8px;
+            height: 10px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.3s;
+        }
+
+        .rubro-item {
+            margin-bottom: 16px;
+        }
+
+        .rubro-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .account-badge {
+            font-size: 0.8rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Control de Gastos & Proyección</h1>
+        <p>Gestión de Cuentas, Racionalización de Rubros y Finanzas Personales</p>
+    </header>
+
+    <!-- DASHBOARD RESUMEN -->
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Ingresos Totales</h3>
+            <div class="amount income" id="total-income">$0</div>
+        </div>
+        <div class="card">
+            <h3>Gastos Totales</h3>
+            <div class="amount expense" id="total-expense">$0</div>
+        </div>
+        <div class="card">
+            <h3>Balance Disponible</h3>
+            <div class="amount balance" id="total-balance">$0</div>
+        </div>
+    </div>
+
+    <div class="layout-main">
+        <!-- FORMULARIO DE INGRESO / GASTO -->
+        <div class="card">
+            <h3>Registrar Movimiento</h3>
+            <form id="tx-form" style="margin-top: 14px;">
+                <div class="form-group">
+                    <label>Tipo de Movimiento</label>
+                    <select id="type" required>
+                        <option value="egreso">Salida / Gasto</option>
+                        <option value="ingreso">Entrada / Ingreso</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Monto ($)</label>
+                    <input type="number" id="amount" placeholder="Ej: 25000" min="0" step="any" required>
+                </div>
+                <div class="form-group">
+                    <label>Cuenta / Medio</label>
+                    <select id="account" required>
+                        <option value="Mercado Pago">Mercado Pago (Billetera)</option>
+                        <option value="Banco Santander">Banco Santander</option>
+                        <option value="Banco BBVA">Banco BBVA</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Otra Billetera">Otra Billetera Virtual</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Rubro / Categoría</label>
+                    <select id="category" required>
+                        <option value="Gastos Fijos">Gastos Fijos (Alquiler, Servicios, Tarjeta)</option>
+                        <option value="Alimentación y Hogar">Alimentación y Hogar (Super, Farmacia)</option>
+                        <option value="Ocio y Gustos">Ocio y Gustos (Salidas, Compras)</option>
+                        <option value="Ahorro e Inversión">Ahorro e Inversión</option>
+                        <option value="Ingreso Laboral">Ingreso Laboral / Sueldo</option>
+                        <option value="Otros Ingresos">Otros Ingresos</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fecha</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                    <label>Descripción / Detalle</label>
+                    <input type="text" id="description" placeholder="Ej: Pago de Luz, Supermercado, etc.">
+                </div>
+                <button type="submit" class="btn">Guardar Movimiento</button>
+            </form>
+        </div>
+
+        <!-- PANELES DE INFORMACIÓN / HISTORIAL -->
+        <div>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('tab-historial', this)">Historial</button>
+                <button class="tab-btn" onclick="switchTab('tab-racionalizacion', this)">Proyección & Rubros</button>
+                <button class="tab-btn" onclick="switchTab('tab-cuentas', this)">Saldos por Cuenta</button>
+            </div>
+
+            <!-- TAB HISTORIAL -->
+            <div id="tab-historial" class="tab-content active card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3>Historial de Movimientos</h3>
+                    <button onclick="exportCSV()" class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">Exportar Excel/CSV</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Cuenta</th>
+                                <th>Rubro</th>
+                                <th>Detalle</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table">
+                            <!-- Filas dinámicas -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB RACIONALIZACIÓN & PROYECTADO -->
+            <div id="tab-racionalizacion" class="tab-content card">
+                <h3>Racionalización de Gastos de Acuerdo a Ingresos</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+                    Objetivos automáticos sugeridos (Regla 50/25/15/10) comparados con tus gastos reales del mes.
+                </p>
+                <div id="rubros-progress">
+                    <!-- Progreso de rubros dinámico -->
+                </div>
+            </div>
+
+            <!-- TAB CUENTAS -->
+            <div id="tab-cuentas" class="tab-content card">
+                <h3>Saldos Disponibles por Cuenta</h3>
+                <div class="table-responsive" style="margin-top: 12px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cuenta / Entidad</th>
+                                <th>Saldo Disponible</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accounts-table">
+                            <!-- Saldos por cuenta dinámicos -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Configuración de metas porcentuales
+        const targets = {
+            "Gastos Fijos": 0.50,
+            "Alimentación y Hogar": 0.25,
+            "Ocio y Gustos": 0.15,
+            "Ahorro e Inversión": 0.10
+        };
+
+        // Estado inicial desde localStorage
+        let transactions = JSON.parse(localStorage.getItem('app_gastos_txs')) || [
+            { id: 1, type: 'ingreso', amount: 800000, account: 'Banco Santander', category: 'Ingreso Laboral', date: '2026-08-01', description: 'Sueldo' },
+            { id: 2, type: 'egreso', amount: 250000, account: 'Banco Santander', category: 'Gastos Fijos', date: '2026-08-03', description: 'Alquiler y Expensas' },
+            { id: 3, type: 'egreso', amount: 95000, account: 'Mercado Pago', category: 'Alimentación y Hogar', date: '2026-08-05', description: 'Compra Semanal Super' },
+            { id: 4, type: 'egreso', amount: 35000, account: 'Efectivo', category: 'Ocio y Gustos', date: '2026-08-10', description: 'Cena Fin de Semana' }
+        ];
+
+        document.getElementById('date').valueAsDate = new Date();
+
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        document.getElementById('tx-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newTx = {
+                id: Date.now(),
+                type: document.getElementById('type').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                account: document.getElementById('account').value,
+                category: document.getElementById('category').value,
+                date: document.getElementById('date').value,
+                description: document.getElementById('description').value || '-'
+            };
+
+            transactions.unshift(newTx);
+            saveAndRender();
+            this.reset();
+            document.getElementById('date').valueAsDate = new Date();
+        });
+
+        function deleteTx(id) {
+            transactions = transactions.filter(t => t.id !== id);
+            saveAndRender();
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('app_gastos_txs', JSON.stringify(transactions));
+            render();
+        }
+
+        function formatMoney(num) {
+            return '$' + num.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function render() {
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const accountBalances = {};
+            const expensesByCategory = {
+                "Gastos Fijos": 0,
+                "Alimentación y Hogar": 0,
+                "Ocio y Gustos": 0,
+                "Ahorro e Inversión": 0
+            };
+
+            const tbody = document.getElementById('history-table');
+            tbody.innerHTML = '';
+
+            transactions.forEach(tx => {
+                if (tx.type === 'ingreso') {
+                    totalIncome += tx.amount;
+                    accountBalances[tx.account] = (accountBalances[tx.account] || 0) + tx.amount;
+                } else {
+                    totalExpense += tx.amount;
+                    accountBalances[tx.account] = (accountBalances[tx.account] || 0) - tx.amount;
+                    if (expensesByCategory[tx.category] !== undefined) {
+                        expensesByCategory[tx.category] += tx.amount;
+                    }
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${tx.date}</td>
+                    <td><span class="tag ${tx.type}">${tx.type.toUpperCase()}</span></td>
+                    <td style="font-weight:600;">${formatMoney(tx.amount)}</td>
+                    <td><span class="account-badge">${tx.account}</span></td>
+                    <td>${tx.category}</td>
+                    <td>${tx.description}</td>
+                    <td><button onclick="deleteTx(${tx.id})" style="background:none; border:none; color:var(--danger); cursor:pointer;">✕</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('total-income').innerText = formatMoney(totalIncome);
+            document.getElementById('total-expense').innerText = formatMoney(totalExpense);
+            document.getElementById('total-balance').innerText = formatMoney(totalIncome - totalExpense);
+
+            // Render Cuentas
+            const accTbody = document.getElementById('accounts-table');
+            accTbody.innerHTML = '';
+            const defaultAccounts = ['Mercado Pago', 'Banco Santander', 'Banco BBVA', 'Efectivo', 'Otra Billetera'];
+            defaultAccounts.forEach(acc => {
+                const bal = accountBalances[acc] || 0;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${acc}</strong></td>
+                    <td style="color: ${bal >= 0 ? 'var(--text)' : 'var(--danger)'}; font-weight:600;">${formatMoney(bal)}</td>
+                `;
+                accTbody.appendChild(tr);
+            });
+
+            // Render Racionalización
+            const progressContainer = document.getElementById('rubros-progress');
+            progressContainer.innerHTML = '';
+
+            for (const [category, ratio] of Object.entries(targets)) {
+                const targetCap = totalIncome * ratio;
+                const spent = expensesByCategory[category] || 0;
+                const percentSpent = targetCap > 0 ? Math.min((spent / targetCap) * 100, 100) : 0;
+                const isOver = spent > targetCap && targetCap > 0;
+
+                const div = document.createElement('div');
+                div.className = 'rubro-item';
+                div.innerHTML = `
+                    <div class="rubro-header">
+                        <span>${category} (${ratio * 100}% Asignado)</span>
+                        <span>${formatMoney(spent)} / Cap: ${formatMoney(targetCap)}</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: ${percentSpent}%; background-color: ${isOver ? 'var(--danger)' : 'var(--primary)'};"></div>
+                    </div>
+                    ${isOver ? `<span style="color:var(--danger); font-size:0.75rem; font-weight:600;">⚠️ Te has excedido por ${formatMoney(spent - targetCap)} de tu proyección ideal.</span>` : ''}
+                `;
+                progressContainer.appendChild(div);
+            }
+        }
+
+        function exportCSV() {
+            let csv = 'Fecha,Tipo,Monto,Cuenta,Rubro,Detalle\n';
+            transactions.forEach(tx => {
+                csv += `"${tx.date}","${tx.type}","${tx.amount}","${tx.account}","${tx.category}","${tx.description}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'historial_gastos.csv');
+            a.click();
+        }
+
+        render();
+    </script>
+</body>
+</html>
