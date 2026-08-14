@@ -288,11 +288,13 @@
                 <div class="form-group">
                     <label>Cuenta / Medio</label>
                     <select id="account" required>
-                        <option value="Mercado Pago">Mercado Pago (Billetera)</option>
-                        <option value="Banco Santander">Banco Santander</option>
-                        <option value="Banco BBVA">Banco BBVA</option>
+                        <option value="BBVA">Banco BBVA</option>
+                        <option value="Hipotecario">Banco Hipotecario</option>
+                        <option value="BNA">BNA (Banco Nación)</option>
+                        <option value="Mercado Pago">Mercado Pago</option>
+                        <option value="Cuenta DNI">Cuenta DNI</option>
+                        <option value="Personal Pay">Personal Pay</option>
                         <option value="Efectivo">Efectivo</option>
-                        <option value="Otra Billetera">Otra Billetera Virtual</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -393,12 +395,14 @@
             "Ahorro e Inversión": 0.10
         };
 
-        // Estado inicial desde localStorage
+        const defaultAccountsList = ['BBVA', 'Hipotecario', 'BNA', 'Mercado Pago', 'Cuenta DNI', 'Personal Pay', 'Efectivo'];
+
+        // Cargar movimientos
         let transactions = JSON.parse(localStorage.getItem('app_gastos_txs')) || [
-            { id: 1, type: 'ingreso', amount: 800000, account: 'Banco Santander', category: 'Ingreso Laboral', date: '2026-08-01', description: 'Sueldo' },
-            { id: 2, type: 'egreso', amount: 250000, account: 'Banco Santander', category: 'Gastos Fijos', date: '2026-08-03', description: 'Alquiler y Expensas' },
+            { id: 1, type: 'ingreso', amount: 800000, account: 'BBVA', category: 'Ingreso Laboral', date: '2026-08-01', description: 'Sueldo' },
+            { id: 2, type: 'egreso', amount: 250000, account: 'BBVA', category: 'Gastos Fijos', date: '2026-08-03', description: 'Alquiler y Expensas' },
             { id: 3, type: 'egreso', amount: 95000, account: 'Mercado Pago', category: 'Alimentación y Hogar', date: '2026-08-05', description: 'Compra Semanal Super' },
-            { id: 4, type: 'egreso', amount: 35000, account: 'Efectivo', category: 'Ocio y Gustos', date: '2026-08-10', description: 'Cena Fin de Semana' }
+            { id: 4, type: 'egreso', amount: 35000, account: 'Cuenta DNI', category: 'Ocio y Gustos', date: '2026-08-10', description: 'Cena Fin de Semana' }
         ];
 
         document.getElementById('date').valueAsDate = new Date();
@@ -488,8 +492,7 @@
             // Render Cuentas
             const accTbody = document.getElementById('accounts-table');
             accTbody.innerHTML = '';
-            const defaultAccounts = ['Mercado Pago', 'Banco Santander', 'Banco BBVA', 'Efectivo', 'Otra Billetera'];
-            defaultAccounts.forEach(acc => {
+            defaultAccountsList.forEach(acc => {
                 const bal = accountBalances[acc] || 0;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
